@@ -70,3 +70,34 @@
 		    :if-exists :supersede)
     (funcall thunk))
   (ext:shell (concatenate 'string "dot -Tpng -O " fname)))
+
+(defun graph->png (fname nodes edges)
+  (dot->png fname
+	    (lambda ()
+	      (graph->dot nodes edges))))
+
+(defun uedges->dot (edges)
+  ;; list of edges [(edge-name [locations,...]),...]
+  (maplist (lambda (lst)  ; lst <- (edge-name [locations])
+	     (mapc (lambda (edge) ; edge <- (edge-name)
+		     (unless (assoc (car edge) (cdr lst)) ; if edge in [locations]
+		       (fresh-line)
+		       (princ (dot-name (caar lst)))
+		       (princ "--")
+		       (princ (dot-name (car edge)))
+		       (princ "[label=\"")
+		       (princ (dot-label (cdr edge)))
+		       (princ "\"];")))
+		   (cdar lst)))      ; for each location
+	   edges)) ; for each (edge-name [locations]) in input
+
+(defun ugraph->dot (nodes edges)
+  (princ "graph{")
+  (nodes->dot nodes)
+  (uedges->dot edges)
+  (princ "}"))
+
+(defun ugraph->png (fname nodes edges)
+  (dot->png fname
+	    (lambda ()
+	      (ugraph->dot nodes edges))))
